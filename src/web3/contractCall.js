@@ -2,42 +2,35 @@ import { ethers } from "ethers";
 import abiFile from "./abi/contracts/dataFeed/AggregatorV3Interface.sol/AggregatorV3Interface.json";
 
 export default async function getPriceData() {
-  const fujiAddress = "0x5498BB86BC934c8D34FDA08E81D444153d0D06aD";
-  const mumbaiAddress = "0xd0D5e3DB44DE05E9F294BB0a3bEEaF030DE24Ada";
-  if (typeof window.ethereum !== "undefined") {
-    const provider = new ethers.BrowserProvider(window.ethereum);
-    window.ethereum
-      .enable()
-      .then(async (accounts) => {
-        const signer = await provider.getSigner(accounts[0]);
-        const fujiContract = new ethers.Contract(
-          fujiAddress,
-          abiFile.abi,
-          signer
-        );
-        const mumbaiContract = new ethers.Contract(
-          mumbaiAddress,
-          abiFile.abi,
-          signer
-        );
-        const avaxPrice = fujiContract.latestRoundData();
-        const maticPrice = mumbaiContract.latestRoundData();
-        Promise.all([avaxPrice, maticPrice])
-          .then((values) => {
-            console.log(`${values[0][1]}`, `${values[1][1]}`);
-            return values;
-          })
-          .catch((e) => {
-            console.error(e);
-            return undefined;
-          });
-      })
-      .catch((error) => {
-        console.error("계정 접근 권한이 거부되었습니다.", error);
-        return { undefined };
+  try {
+    // POLYGON MAINNET
+    const avaxAddress = "0xe01ea2fbd8d76ee323fbed03eb9a8625ec981a10";
+    const maticAddress = "0xab594600376ec9fd91f8e885dadf0ce036862de0";
+    if (typeof window.ethereum !== "undefined") {
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      await window.ethereum.enable();
+      const accounts = await window.ethereum.request({
+        method: "eth_requestAccounts",
       });
-  } else {
-    console.error("MetaMask가 설치되어 있지 않습니다.");
-    return { undefined };
+      const account = accounts[0];
+      const signer = await provider.getSigner(account);
+      const avaxContract = new ethers.Contract(
+        avaxAddress,
+        abiFile.abi,
+        signer
+      );
+      const maticContract = new ethers.Contract(
+        maticAddress,
+        abiFile.abi,
+        signer
+      );
+      return {
+        err: undefined,
+        data: { avaxContract: avaxContract, maticContract: maticContract },
+      };
+    }
+  } catch (e) {
+    console.log(e.message);
+    return { err: e.message, data: undefined };
   }
 }
